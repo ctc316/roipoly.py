@@ -50,6 +50,8 @@ class RoiPoly:
         self.fig = fig
         self.ax = ax
 
+        self.readyToLabel = False
+
         # Mouse event callbacks
         self.__cid1 = self.fig.canvas.mpl_connect(
             'motion_notify_event', self.__motion_notify_callback)
@@ -116,7 +118,7 @@ class RoiPoly:
         if event.inaxes:
             x, y = event.xdata, event.ydata
             ax = event.inaxes
-            if event.button == 1 and event.dblclick is False:
+            if self.readyToLabel and event.button == 1 and event.dblclick is False:
                 logger.debug("Received single left mouse button click")
                 if self.line is None:  # If there is no line, create a line
                     self.line = plt.Line2D([x, x], [y, y],
@@ -144,9 +146,16 @@ class RoiPoly:
                     event.inaxes.add_line(self.line)
                     self.fig.canvas.draw()
 
-            elif (((event.button == 1 and event.dblclick is True) or
-                   (event.button == 3 and event.dblclick is False)) and
-                  self.line is not None):
+            elif ((event.button == 1 and event.dblclick is True) or
+                   (event.button == 3 and event.dblclick is False)):
+
+                if not self.readyToLabel:
+                    self.readyToLabel = True
+                    return
+
+                if self.line is None:
+                    return
+                    
                 # Close the loop and disconnect
                 logger.debug("Received single right mouse button click or "
                              "double left click")
